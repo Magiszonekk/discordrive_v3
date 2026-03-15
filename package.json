@@ -1,0 +1,12 @@
+{
+  "name": "discordrive",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev":       "bun run --filter '*' dev",
+    "dev:api":   "bun run --cwd apps/api dev",
+    "dev:web":   "bun run --cwd apps/frontend dev",
+    "build":     "bun run --filter '*' build",
+    "typecheck": "bun run --filter '*' typecheck"
+  }
+}

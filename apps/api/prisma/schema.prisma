@@ -1,0 +1,59 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  files        File[]
+  folders      Folder[]
+}
+
+model Folder {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  parentId  String?
+  parent    Folder?  @relation("FolderTree", fields: [parentId], references: [id])
+  children  Folder[] @relation("FolderTree")
+  files     File[]
+}
+
+model File {
+  id           String    @id @default(cuid())
+  name         String
+  size         Int
+  hash         String
+  mimeType     String
+  salt         String
+  createdAt    DateTime  @default(now())
+  expiresAt    DateTime?
+  isAnonymous  Boolean   @default(false)
+  userId       String?
+  user         User?     @relation(fields: [userId], references: [id])
+  encryptedKey String?
+  folderId     String?
+  folder       Folder?   @relation(fields: [folderId], references: [id])
+  shareToken   String?   @unique
+  chunks       Chunk[]
+}
+
+model Chunk {
+  id              String @id @default(cuid())
+  index           Int
+  messageId       String
+  channelId       String
+  webhookId       String
+  attachmentIndex Int
+  iv              String
+  fileId          String
+  file            File   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+}

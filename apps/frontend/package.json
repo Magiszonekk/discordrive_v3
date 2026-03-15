@@ -1,0 +1,14 @@
+{
+  "name": "@discordrive/frontend",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@discordrive/config": "workspace:*",
+    "@discordrive/types": "workspace:*"
+  }
+}
