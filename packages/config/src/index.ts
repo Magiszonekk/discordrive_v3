@@ -17,3 +17,11 @@ export const config = {
 } as const
 
 export type Config = typeof config
+
+export function getConnectionString(): string {
+  const { POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, POSTGRES_PORT = "5432" } = process.env
+  if (POSTGRES_USER && POSTGRES_PASSWORD && POSTGRES_DB) {
+    return `postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:${POSTGRES_PORT}/${POSTGRES_DB}`
+  }
+  return process.env.DATABASE_URL!
+}

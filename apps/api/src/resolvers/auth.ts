@@ -2,9 +2,8 @@ import { GraphQLError } from "graphql"
 import type { Context } from "../context"
 import { signToken } from "../context"
 
-export const authResolvers = {
-  Mutation: {
-    async register(
+export const AuthMutations = {
+  async register(
       _: unknown,
       { email, password }: { email: string; password: string },
       { prisma }: Context
@@ -30,6 +29,5 @@ export const authResolvers = {
       if (!valid) throw new GraphQLError("Nieprawidłowy email lub hasło")
 
       return { token: signToken(user.id) }
-    },
   },
 }

@@ -1,25 +1,50 @@
-export const typeDefs = /* GraphQL */ `
+export const typeDefs = `#graphql
+  # ============= Query =============
+
   type Query {
-    downloadFile(fileId: ID!):                  DownloadFileResult!
-    downloadSharedFile(shareToken: String!):     SharedFileResult!
-    myFiles(folderId: ID):                       [FileInfo!]!
-    myFolders(parentId: ID):                     [FolderInfo!]!
+    files:   FileQueries!
+    folders: FolderQueries!
+    me:      User
   }
+
+  type FileQueries {
+    list(folderId: ID):                  [FileInfo!]!
+    download(fileId: ID!):               DownloadFileResult!
+    downloadShared(shareToken: String!): SharedFileResult!
+  }
+
+  type FolderQueries {
+    list(parentId: ID): [FolderInfo!]!
+  }
+
+  # ============= Mutation =============
 
   type Mutation {
-    register(email: String!, password: String!): AuthResult!
-    login(email: String!, password: String!):    AuthResult!
-    uploadFile(input: UploadFileInput!):         UploadFileResult!
-    deleteFile(fileId: ID!):                     Boolean!
-    createFolder(name: String!, parentId: ID):   FolderInfo!
-    deleteFolder(folderId: ID!):                 Boolean!
-    renameFolder(folderId: ID!, name: String!):  FolderInfo!
-    moveFile(fileId: ID!, folderId: ID):         Boolean!
-    enableSharing(fileId: ID!):                  String!
-    disableSharing(fileId: ID!):                 Boolean!
+    files:   FileMutations!
+    folders: FolderMutations!
+    auth:    AuthMutations!
   }
 
-  # ——— Upload ———
+  type FileMutations {
+    upload(input: UploadFileInput!): UploadFileResult!
+    delete(fileId: ID!):             Boolean!
+    move(fileId: ID!, folderId: ID): Boolean!
+    enableSharing(fileId: ID!):      String!
+    disableSharing(fileId: ID!):     Boolean!
+  }
+
+  type FolderMutations {
+    create(name: String!, parentId: ID): FolderInfo!
+    delete(folderId: ID!):               Boolean!
+    rename(folderId: ID!, name: String!): FolderInfo!
+  }
+
+  type AuthMutations {
+    register(email: String!, password: String!): AuthResult!
+    login(email: String!, password: String!):    AuthResult!
+  }
+
+  # ============= Upload =============
 
   input UploadFileInput {
     name:         String!
@@ -43,7 +68,7 @@ export const typeDefs = /* GraphQL */ `
     fileId: ID!
   }
 
-  # ——— Download ———
+  # ============= Download =============
 
   type DownloadFileResult {
     fileId:       ID!
@@ -69,7 +94,7 @@ export const typeDefs = /* GraphQL */ `
     iv:    String!
   }
 
-  # ——— File list ———
+  # ============= File & Folder =============
 
   type FileInfo {
     fileId:     ID!
@@ -82,8 +107,6 @@ export const typeDefs = /* GraphQL */ `
     shareToken: String
   }
 
-  # ——— Folders ———
-
   type FolderInfo {
     folderId:  ID!
     name:      String!
@@ -91,7 +114,13 @@ export const typeDefs = /* GraphQL */ `
     parentId:  ID
   }
 
-  # ——— Auth ———
+  # ============= Auth =============
+
+  type User {
+    id:        ID!
+    email:     String!
+    createdAt: String!
+  }
 
   type AuthResult {
     token: String!

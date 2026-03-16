@@ -4,9 +4,11 @@
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
     "dev":       "bun run --filter '*' dev",
-    "dev:api":   "bun run --cwd apps/api dev",
+    "dev:api":   "bun --env-file infra/.env --env-file apps/api/.env --hot apps/api/src/index.ts",
     "dev:web":   "bun run --cwd apps/frontend dev",
     "build":     "bun run --filter '*' build",
-    "typecheck": "bun run --filter '*' typecheck"
+    "typecheck": "bun run --filter '*' typecheck",
+    "db:migrate":  "bun run --cwd apps/api prisma db push",
+    "db:generate": "bun run --cwd apps/api prisma generate"
   }
 }

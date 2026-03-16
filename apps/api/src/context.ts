@@ -1,8 +1,9 @@
 import { PrismaClient } from "@prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
 import jwt from "jsonwebtoken"
+import { getConnectionString } from "@discordrive/config"
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! })
+const adapter = new PrismaPg({ connectionString: getConnectionString() })
 export const prisma = new PrismaClient({ adapter })
 
 const JWT_SECRET = process.env.JWT_SECRET ?? "change-me"
