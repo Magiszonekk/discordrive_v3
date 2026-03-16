@@ -1,6 +1,6 @@
 import { GraphQLError } from "graphql"
 import { z } from "zod"
-import { uploadBatch, downloadChunk, deleteChunks } from "@discordrive/discord-client"
+import { uploadChunksParallel, downloadChunk, deleteChunks } from "@discordrive/discord-client"
 import { config } from "@discordrive/config"
 import type { Context } from "../context"
 
@@ -17,18 +17,13 @@ const UploadInputSchema = z.object({
   size:         z.number().int().min(1).max(config.maxUploadSize),
   hash:         z.string().regex(/^[a-f0-9]{64}$/),
   mimeType:     z.string().min(1),
-  salt:         z.string().min(1),
+  salt:         z.string().optional(),
   isAnonymous:  z.boolean(),
   encryptedKey: z.string().optional(),
+  wrappingIv:   z.string().optional(),
   folderId:     z.string().optional(),
   chunks:       z.array(ChunkSchema).min(1),
 })
-
-function batchify<T>(arr: T[], size: number): T[][] {
-  const batches: T[][] = []
-  for (let i = 0; i < arr.length; i += size) batches.push(arr.slice(i, i + size))
-  return batches
-}
 
 // ============= FileQueries =============
 
@@ -84,6 +79,7 @@ export const FileQueries = {
       hash:         file.hash,
       salt:         file.salt,
       encryptedKey: file.encryptedKey ?? null,
+      wrappingIv:   file.wrappingIv ?? null,
       chunks,
     }
   },
@@ -123,36 +119,34 @@ export const FileMutations = {
     const parsed = UploadInputSchema.safeParse(input)
     if (!parsed.success) throw new GraphQLError(`Nieprawidłowe dane: ${parsed.error.message}`)
 
-    const { name, size, hash, mimeType, salt, isAnonymous, encryptedKey, folderId, chunks } = parsed.data
+    const { name, size, hash, mimeType, salt, isAnonymous, encryptedKey, wrappingIv, folderId, chunks } = parsed.data
 
     if (!isAnonymous && !userId) {
       throw new GraphQLError("Musisz być zalogowany aby przesłać plik jako authenticated")
     }
 
-    const expiresAt = isAnonymous
+    const expiresAt = isAnonymous && config.anonymousTTLDays !== null
       ? new Date(Date.now() + config.anonymousTTLDays * 24 * 60 * 60 * 1000)
       : null
 
     const file = await prisma.file.create({
-      data: { name, size, hash, mimeType, salt, isAnonymous, encryptedKey, folderId: folderId ?? null, expiresAt, userId: userId ?? null },
+      data: { name, size, hash, mimeType, salt, isAnonymous, encryptedKey, wrappingIv, folderId: folderId ?? null, expiresAt, userId: userId ?? null },
     })
 
     try {
-      for (const batch of batchify(chunks, 10)) {
-        const uploaded = await uploadBatch(
-          batch.map((c) => ({ data: Buffer.from(c.data, "base64").buffer as ArrayBuffer, index: c.index }))
-        )
+      const uploaded = await uploadChunksParallel(
+        chunks.map((c) => ({ data: Buffer.from(c.data, "base64").buffer as ArrayBuffer, index: c.index }))
+      )
 
-        await prisma.chunk.createMany({
-          data: uploaded.map((uc) => {
-            const orig = batch.find((c) => c.index === uc.chunkIndex)!
-            return {
-              index: uc.chunkIndex, messageId: uc.messageId, channelId: uc.channelId,
-              webhookId: uc.webhookId, attachmentIndex: uc.attachmentIndex, iv: orig.iv, fileId: file.id,
-            }
-          }),
-        })
-      }
+      await prisma.chunk.createMany({
+        data: uploaded.map((uc) => {
+          const orig = chunks.find((c) => c.index === uc.chunkIndex)!
+          return {
+            index: uc.chunkIndex, messageId: uc.messageId, channelId: uc.channelId,
+            webhookId: uc.webhookId, attachmentIndex: uc.attachmentIndex, iv: orig.iv, fileId: file.id,
+          }
+        }),
+      })
     } catch (err) {
       await prisma.file.delete({ where: { id: file.id } })
       throw new GraphQLError(`Błąd uploadu: ${(err as Error).message}`)

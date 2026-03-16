@@ -42,6 +42,8 @@ export const typeDefs = `#graphql
   type AuthMutations {
     register(email: String!, password: String!): AuthResult!
     login(email: String!, password: String!):    AuthResult!
+    storeMasterKey(key: String!):                Boolean!
+    deleteMasterKey:                             Boolean!
   }
 
   # ============= Upload =============
@@ -51,9 +53,10 @@ export const typeDefs = `#graphql
     size:         Int!
     hash:         String!
     mimeType:     String!
-    salt:         String!
+    salt:         String
     isAnonymous:  Boolean!
     encryptedKey: String
+    wrappingIv:   String
     folderId:     ID
     chunks:       [ChunkInput!]!
   }
@@ -75,8 +78,9 @@ export const typeDefs = `#graphql
     name:         String!
     mimeType:     String!
     hash:         String!
-    salt:         String!
+    salt:         String
     encryptedKey: String
+    wrappingIv:   String
     chunks:       [DownloadChunk!]!
   }
 
@@ -120,6 +124,7 @@ export const typeDefs = `#graphql
     id:        ID!
     email:     String!
     createdAt: String!
+    masterKey: String
   }
 
   type AuthResult {

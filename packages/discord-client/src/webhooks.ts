@@ -30,7 +30,7 @@ function parseWebhookId(url: string): string {
  * @returns Tablica wpisów { id, client }
  * @throws Jeśli żaden webhook nie jest zdefiniowany w środowisku
  */
-function getWebhooks(): WebhookEntry[] {
+export function getWebhooks(): WebhookEntry[] {
   if (webhooks) return webhooks
 
   const entries: WebhookEntry[] = []

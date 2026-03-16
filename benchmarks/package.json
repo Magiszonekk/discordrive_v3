@@ -1,0 +1,10 @@
+{
+  "name": "@discordrive/benchmarks",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@discordrive/config": "workspace:*",
+    "@discordrive/processing": "workspace:*"
+  }
+}

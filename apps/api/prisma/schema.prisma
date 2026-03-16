@@ -10,6 +10,7 @@ model User {
   id           String   @id @default(cuid())
   email        String   @unique
   passwordHash String
+  masterKey    String?
   createdAt    DateTime @default(now())
   files        File[]
   folders      Folder[]
@@ -33,13 +34,14 @@ model File {
   size         Int
   hash         String
   mimeType     String
-  salt         String
+  salt         String?
   createdAt    DateTime  @default(now())
   expiresAt    DateTime?
   isAnonymous  Boolean   @default(false)
   userId       String?
   user         User?     @relation(fields: [userId], references: [id])
   encryptedKey String?
+  wrappingIv   String?
   folderId     String?
   folder       Folder?   @relation(fields: [folderId], references: [id])
   shareToken   String?   @unique

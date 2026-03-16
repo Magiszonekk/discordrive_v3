@@ -4,11 +4,30 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun run src/index.ts",
+    "dev": "vite",
+    "build": "vite build",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.6.1",
+    "lucide-react": "^0.511.0",
+    "sonner": "^2.0.3",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.3.0",
     "@discordrive/config": "workspace:*",
-    "@discordrive/types": "workspace:*"
+    "@discordrive/types": "workspace:*",
+    "@discordrive/processing": "workspace:*"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.5.2",
+    "vite": "^6.3.5",
+    "typescript": "^5.9.3",
+    "@types/react": "^19.1.5",
+    "@types/react-dom": "^19.1.5",
+    "tailwindcss": "^4.1.8",
+    "@tailwindcss/vite": "^4.1.8"
   }
 }

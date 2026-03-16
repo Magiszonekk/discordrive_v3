@@ -29,5 +29,25 @@ export const AuthMutations = {
       if (!valid) throw new GraphQLError("Nieprawidłowy email lub hasło")
 
       return { token: signToken(user.id) }
-  },
+    },
+
+    async storeMasterKey(
+      _: unknown,
+      { key }: { key: string },
+      { prisma, userId }: Context
+    ) {
+      if (!userId) throw new GraphQLError("Musisz być zalogowany")
+      await prisma.user.update({ where: { id: userId }, data: { masterKey: key } })
+      return true
+    },
+
+    async deleteMasterKey(
+      _: unknown,
+      __: unknown,
+      { prisma, userId }: Context
+    ) {
+      if (!userId) throw new GraphQLError("Musisz być zalogowany")
+      await prisma.user.update({ where: { id: userId }, data: { masterKey: null } })
+      return true
+    },
 }

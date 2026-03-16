@@ -21,7 +21,7 @@ export interface File {
   userId: string | null
   encryptedKey: string | null  // klucz pliku zaszyfrowany masterKey
 
-  salt: string  // do derive klucza
+  salt: string | null  // legacy; nowy model używa master key
   chunks: Chunk[]
 }
 

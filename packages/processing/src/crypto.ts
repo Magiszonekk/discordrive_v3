@@ -61,7 +61,7 @@ export async function deriveKey(
 export async function encryptChunk(
   chunk: ArrayBuffer,
   key: CryptoKey
-): Promise<{ data: ArrayBuffer; iv: Uint8Array }> {
+): Promise<{ data: ArrayBuffer; iv: Uint8Array<ArrayBuffer> }> {
   const iv = crypto.getRandomValues(new Uint8Array(config.ivLength))
   const data = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, chunk)
   return { data, iv }
@@ -106,4 +106,79 @@ export async function decryptChunk(
  */
 export function generateSalt(): Uint8Array<ArrayBuffer> {
   return crypto.getRandomValues(new Uint8Array(config.saltLength))
+}
+
+/**
+ * Generates a random AES-256-GCM file key.
+ *
+ * Unlike {@link deriveKey}, this key is extractable so it can be
+ * exported for sharing via URL fragment. Used as the per-file
+ * encryption key in the two-layer key model.
+ */
+export async function generateFileKey(): Promise<CryptoKey> {
+  return crypto.subtle.generateKey(
+    { name: "AES-GCM", length: 256 },
+    true,
+    ["encrypt", "decrypt"]
+  )
+}
+
+/**
+ * Exports a CryptoKey to raw bytes.
+ *
+ * Used to get the raw file key for embedding in share URL fragments.
+ */
+export async function exportKey(key: CryptoKey): Promise<ArrayBuffer> {
+  return crypto.subtle.exportKey("raw", key)
+}
+
+/**
+ * Imports raw bytes as an AES-256-GCM CryptoKey.
+ *
+ * Used to reconstruct a file key from a share URL fragment.
+ */
+export async function importKey(raw: ArrayBuffer): Promise<CryptoKey> {
+  return crypto.subtle.importKey(
+    "raw",
+    raw,
+    { name: "AES-GCM", length: 256 },
+    true,
+    ["encrypt", "decrypt"]
+  )
+}
+
+/**
+ * Wraps (encrypts) a file key with a wrapping key derived from user password.
+ *
+ * The wrapped key and IV must be stored in the database alongside
+ * the file to allow the owner to re-derive and unwrap it later.
+ */
+export async function wrapFileKey(
+  fileKey: CryptoKey,
+  wrappingKey: CryptoKey
+): Promise<{ wrapped: ArrayBuffer; iv: Uint8Array<ArrayBuffer> }> {
+  const raw = await crypto.subtle.exportKey("raw", fileKey)
+  const iv = crypto.getRandomValues(new Uint8Array(config.ivLength))
+  const wrapped = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, wrappingKey, raw)
+  return { wrapped, iv }
+}
+
+/**
+ * Unwraps (decrypts) a file key using a wrapping key derived from user password.
+ *
+ * Returns the original file key that can be used to decrypt file chunks.
+ */
+export async function unwrapFileKey(
+  wrapped: ArrayBuffer,
+  wrappingKey: CryptoKey,
+  iv: Uint8Array<ArrayBuffer>
+): Promise<CryptoKey> {
+  const raw = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, wrappingKey, wrapped)
+  return crypto.subtle.importKey(
+    "raw",
+    raw,
+    { name: "AES-GCM", length: 256 },
+    true,
+    ["encrypt", "decrypt"]
+  )
 }
