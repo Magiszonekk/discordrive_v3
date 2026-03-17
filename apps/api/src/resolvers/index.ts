@@ -1,9 +1,18 @@
+import { GraphQLScalarType } from "graphql"
 import { AuthMutations } from "./auth"
 import { FileQueries, FileMutations } from "./files"
 import { FolderQueries, FolderMutations } from "./folders"
 import type { Context } from "../context"
 
+const BigIntScalar = new GraphQLScalarType({
+  name: "BigInt",
+  serialize:    (value) => Number(value),
+  parseValue:   (value) => BigInt(value as number),
+  parseLiteral: (ast)   => "value" in ast ? BigInt(ast.value as string) : null,
+})
+
 export const resolvers = {
+  BigInt: BigIntScalar,
   Query: {
     files:   () => ({}),
     folders: () => ({}),

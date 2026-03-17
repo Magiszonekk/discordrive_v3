@@ -31,7 +31,7 @@ model Folder {
 model File {
   id           String    @id @default(cuid())
   name         String
-  size         Int
+  size         BigInt
   hash         String
   mimeType     String
   salt         String?

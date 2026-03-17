@@ -1,4 +1,6 @@
 export const typeDefs = `#graphql
+  scalar BigInt
+
   # ============= Query =============
 
   type Query {
@@ -50,7 +52,7 @@ export const typeDefs = `#graphql
 
   input UploadFileInput {
     name:         String!
-    size:         Int!
+    size:         BigInt!
     hash:         String!
     mimeType:     String!
     salt:         String
@@ -103,7 +105,7 @@ export const typeDefs = `#graphql
   type FileInfo {
     fileId:     ID!
     name:       String!
-    size:       Int!
+    size:       BigInt!
     mimeType:   String!
     createdAt:  String!
     expiresAt:  String

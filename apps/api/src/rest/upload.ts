@@ -94,20 +94,24 @@ export async function handleUpload(req: Request): Promise<Response> {
 const InitSchema = z.object({
   name:         z.string().min(1).max(255),
   size:         z.number().int().min(1).max(config.maxUploadSize),
-  hash:         z.string().regex(/^[a-f0-9]{64}$/),
+  hash:         z.string().regex(/^[a-f0-9]{64}$/).optional(), // may be deferred to /complete
   mimeType:     z.string().min(1),
   isAnonymous:  z.boolean(),
   encryptedKey: z.string().optional(),
   wrappingIv:   z.string().optional(),
   salt:         z.string().optional(),
   folderId:     z.string().optional(),
-  chunks:       z.array(z.object({ index: z.number().int().min(0), iv: z.string().min(1) })).min(1),
+  chunkCount:   z.number().int().min(1), // replaces chunks array — IVs come per-chunk via ?iv=
 })
+
+const CompleteBodySchema = z.object({
+  hash: z.string().regex(/^[a-f0-9]{64}$/).optional(),
+}).optional()
 
 /**
  * POST /api/upload/init
- * Body: JSON with file metadata + chunk list (index, iv). No binary data.
- * Returns: { fileId }
+ * Body: JSON with file metadata + chunkCount. No binary data, no IVs.
+ * Returns: { fileId, chunkCount }
  */
 export async function handleUploadInit(req: Request): Promise<Response> {
   const { userId } = buildContext(req)
@@ -121,7 +125,7 @@ export async function handleUploadInit(req: Request): Promise<Response> {
     return jsonResponse({ error: "Nieprawidłowy JSON" }, 400)
   }
 
-  const { name, size, hash, mimeType, isAnonymous, encryptedKey, wrappingIv, salt, folderId } = body
+  const { name, size, hash, mimeType, isAnonymous, encryptedKey, wrappingIv, salt, folderId, chunkCount } = body
 
   if (!isAnonymous && !userId) {
     return jsonResponse({ error: "Musisz być zalogowany aby przesłać plik jako authenticated" }, 401)
@@ -132,10 +136,10 @@ export async function handleUploadInit(req: Request): Promise<Response> {
     : null
 
   const file = await prisma.file.create({
-    data: { name, size, hash, mimeType, salt, isAnonymous, encryptedKey, wrappingIv, folderId: folderId ?? null, expiresAt, userId: userId ?? null },
+    data: { name, size, hash: hash ?? "", mimeType, salt, isAnonymous, encryptedKey, wrappingIv, folderId: folderId ?? null, expiresAt, userId: userId ?? null },
   })
 
-  return jsonResponse({ fileId: file.id, chunkCount: body.chunks.length }, 201)
+  return jsonResponse({ fileId: file.id, chunkCount }, 201)
 }
 
 /**
@@ -181,7 +185,8 @@ export async function handleUploadChunk(req: Request, fileId: string, chunkIndex
 
 /**
  * POST /api/upload/:fileId/complete
- * Validates all chunks are present. Returns final confirmation.
+ * Validates all chunks are present. Optionally finalizes the file hash (for streaming uploads
+ * where hash couldn't be known at init time). Returns final confirmation.
  */
 export async function handleUploadComplete(req: Request, fileId: string): Promise<Response> {
   const { userId } = buildContext(req)
@@ -194,6 +199,17 @@ export async function handleUploadComplete(req: Request, fileId: string): Promis
   if (!file) return jsonResponse({ error: "Plik nie istnieje" }, 404)
   if (!file.isAnonymous && file.userId !== userId) {
     return jsonResponse({ error: "Brak uprawnień" }, 403)
+  }
+
+  let body: z.infer<typeof CompleteBodySchema>
+  try {
+    body = CompleteBodySchema.parse(await req.json().catch(() => undefined))
+  } catch {
+    body = undefined
+  }
+
+  if (body?.hash) {
+    await prisma.file.update({ where: { id: fileId }, data: { hash: body.hash } })
   }
 
   return jsonResponse({ fileId: file.id, chunksUploaded: file._count.chunks })

@@ -24,7 +24,7 @@ export async function handleShareMeta(shareToken: string): Promise<Response> {
   return jsonResponse({
     fileId: file.id,
     name: file.name,
-    size: file.size,
+    size: Number(file.size),
     mimeType: file.mimeType,
     hash: file.hash,
     chunkCount: file.chunks.length,

@@ -43,7 +43,7 @@ export const FileQueries = {
     return files.map((f) => ({
       fileId:     f.id,
       name:       f.name,
-      size:       f.size,
+      size:       Number(f.size),
       mimeType:   f.mimeType,
       createdAt:  f.createdAt.toISOString(),
       expiresAt:  f.expiresAt?.toISOString() ?? null,

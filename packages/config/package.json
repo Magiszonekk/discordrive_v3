@@ -2,9 +2,18 @@
   "name": "@discordrive/config",
   "version": "0.0.1",
   "type": "module",
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "source": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "private": true,
   "scripts": {
+    "build": "bun build --target node --outdir ./dist ./src/index.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

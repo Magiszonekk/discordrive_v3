@@ -31,7 +31,7 @@ export async function handleDownloadMeta(req: Request, fileId: string): Promise<
   return jsonResponse({
     fileId: file.id,
     name: file.name,
-    size: file.size,
+    size: Number(file.size),
     mimeType: file.mimeType,
     hash: file.hash,
     salt: file.salt,
